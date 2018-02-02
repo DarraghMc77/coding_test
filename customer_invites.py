@@ -1,6 +1,8 @@
 import config
 import json
 from math import radians, sin, cos, acos
+import logging
+import sys
 
 def invited_customers():
     customer_data = read_file()
@@ -15,16 +17,30 @@ def invited_customers():
         print(customer)
 
 def parse_json(json_data):
-    customer_json = json.loads(json_data)
-    customer_json['latitude'] = float(customer_json['latitude'])
-    customer_json['longitude'] = float(customer_json['longitude'])
+    try:
+        customer_json = json.loads(json_data)
+        customer_json['latitude'] = float(customer_json['latitude'])
+        customer_json['longitude'] = float(customer_json['longitude'])
+    except json.decoder.JSONDecodeError as e:
+        print('ERROR: JSON decoding has failed - {0} - {1}'.format(json_data, e.args))
+        sys.exit()
+    except KeyError as e:
+        print('ERROR: Missing Key - {}'.format(e))
+        sys.exit()
+    except Exception as e:
+        print('ERROR: {}'.format(e))
+        sys.exit()
     return customer_json
 
 def read_file():
     customer_data = []
-    with open(config.CUSTOMER_LIST) as json_file:
-        for line in json_file:
-            customer_data.append(parse_json(line))
+    try:
+        with open(config.CUSTOMER_LIST) as json_file:
+            for line in json_file:
+                customer_data.append(parse_json(line))
+    except FileNotFoundError as e:
+        print('ERROR: {0} {1}'.format(e.strerror, e.filename))
+        sys.exit()
     return customer_data
 
 def convert_to_radians(location):
